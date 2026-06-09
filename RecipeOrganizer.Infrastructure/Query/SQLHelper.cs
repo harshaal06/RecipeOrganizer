@@ -1,162 +1,138 @@
-﻿using System.Data;
+﻿using MySqlConnector;
+using System.Data;
 
 namespace RecipeOrganizer.Infrastructure.Query
 {
-    internal class SQLHelper
+    public class SQLHelper
     {
-        //private SqlConnection connection;
+        private MySqlConnection connection;
 
-        ///// <summary>
-        ///// Function use for initialised SqlConnection and open sql connetion.
-        ///// </summary>
-        //private SqlConnection OpenSqlConnection(string connectionString)
-        //{
-        //    if (connection != null && connection.ConnectionString.Equals(connectionString))
-        //    {
-        //        return connection;
-        //    }
-        //    else
-        //    {
-        //        CloseSqlConnection();
-        //    }
+        /// <summary>
+        /// Function use for initialised SqlConnection and open sql connetion.
+        /// </summary>
+        private MySqlConnection OpenSqlConnection(string connectionString)
+        {
+            if (connection != null && connection.ConnectionString.Equals(connectionString))
+            {
+                return connection;
+            }
+            else
+            {
+                CloseSqlConnection();
+            }
 
-        //    connection = new SqlConnection(connectionString);
-        //    connection.Open();
-        //    return connection;
-        //}
+            connection = new MySqlConnection(connectionString);
+            connection.Open();
+            return connection;
+        }
 
-        ///// <summary>
-        /////  Function used for close sql connetion.
-        ///// </summary>
-        //public void CloseSqlConnection()
-        //{
-        //    if (connection != null)
-        //        connection.Close();
-        //}
+        /// <summary>
+        ///  Function used for close sql connetion.
+        /// </summary>
+        public void CloseSqlConnection()
+        {
+            if (connection != null)
+                connection.Close();
+        }
 
-        ///// <summary>
-        ///// Executes the query.
-        ///// </summary>
-        ///// <returns>The query.</returns>
-        ///// <param name="query">Query.</param>
-        //public SqlDataReader ExecuteQuery(string query, string connectionString)
-        //{
+        /// <summary>
+        /// Executes the query.
+        /// </summary>
+        /// <returns>The query.</returns>
+        /// <param name="query">Query.</param>
+        public MySqlDataReader ExecuteQuery(string query, string connectionString)
+        {
 
-        //    connection = OpenSqlConnection(connectionString);
-        //    SqlCommand command = new SqlCommand(query, connection);
-        //    command.Connection = connection; //Pass the connection object to Command   
+            connection = OpenSqlConnection(connectionString);
+            MySqlCommand command = new MySqlCommand(query, connection);
+            command.Connection = connection; //Pass the connection object to Command   
+            return command.ExecuteReader();
+        }
 
+        public int ExecuteNonQuery(string query, string connectionString)
+        {
 
-        //    return command.ExecuteReader();
-        //}
+            connection = OpenSqlConnection(connectionString);
+            MySqlCommand command = new MySqlCommand(query, connection);
+            command.Connection = connection; //Pass the connection object to Command   
+            return command.ExecuteNonQuery();
+        }
 
-        //public async Task<SqlDataReader> ExecuteQueryAsync(string query, string connectionString)
-        //{
-        //    var connection = new SqlConnection(connectionString);
-        //    await connection.OpenAsync();
+        public int ExecuteScalar(string query, string connectionString)
+        {
+            connection = OpenSqlConnection(connectionString);
+            MySqlCommand command = new MySqlCommand(query, connection);
+            command.Connection = connection; //Pass the connection object to Command   
+            int a = Convert.ToInt32(command.ExecuteScalar());
+            return a;
+        }
 
-        //    var command = new SqlCommand(query, connection);
+        public static string GetStringValue(MySqlDataReader reader, string columnName)
+        {
+            try
+            {
+                if (reader[columnName] != null && reader[columnName] != System.DBNull.Value)
+                    return Convert.ToString(reader[columnName]);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("logging ex for " + columnName);
+                Console.WriteLine(ex);
+            }
+            return "";
+        }
 
-        //    // Important: CommandBehavior.CloseConnection
-        //    // ensures connection closes when reader is disposed
-        //    return await command.ExecuteReaderAsync(
-        //        CommandBehavior.CloseConnection);
-        //}
+        public static Object GetDateValue(MySqlDataReader reader, string column)
+        {
 
-        //public object ExecuteScalar(string query, string connectionString)
-        //{
-        //    connection = OpenSqlConnection(connectionString);
-        //    SqlCommand command = new SqlCommand(query, connection);
-        //    command.Connection = connection; //Pass the connection object to Command   
-        //    var retVal = command.ExecuteScalar();
-        //    return retVal;
-        //}
+            try
+            {
+                if (reader[column] != null && reader[column] != System.DBNull.Value)
+                    return (DateTime)reader[column];
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
 
-        //public int ExecuteNonQuery(string query, string connectionString)
-        //{
-
-        //    connection = OpenSqlConnection(connectionString);
-        //    SqlCommand command = new SqlCommand(query, connection);
-        //    command.Connection = connection; //Pass the connection object to Command   
-        //    return command.ExecuteNonQuery();
-        //}
-
-        //public async Task<int> ExecuteNonQueryAsync(string query, string connectionString)
-        //{
-        //    connection = OpenSqlConnection(connectionString);
-        //    using (SqlCommand command = new SqlCommand(query, connection))
-        //    {
-        //        return await command.ExecuteNonQueryAsync();
-        //    }
-
-        //}
-
-        //public static string GetStringValue(SqlDataReader reader, string columnName)
-        //{
-        //    try
-        //    {
-        //        if (reader[columnName] != DBNull.Value)
-        //            return Convert.ToString(reader[columnName]);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex);
-        //    }
-        //    return "";
-        //}
-        //public static long GetLongValue(SqlDataReader reader, string columnName)
-        //{ try { return (long)reader[columnName]; } catch (Exception ex) { Console.WriteLine(ex); } return 0; }
-        //public static Guid GetGuidValue(SqlDataReader reader, string columnName)
-        //{ try { return (Guid)reader[columnName]; } catch (Exception ex) { Console.WriteLine(ex); } return Guid.Empty; }
-
-        //public static bool GetBitValue(SqlDataReader reader, string columnName)
-        //{
-        //    try
-        //    {
-        //        if (reader[columnName] != DBNull.Value)
-        //            return Convert.ToBoolean(reader[columnName]);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex);
-        //    }
-        //    return false;
-        //}
-
-        //public static string GetNumberStringValue(SqlDataReader reader, string columnName)
-        //{
-        //    try
-        //    {
-        //        return Convert.ToString(reader[columnName]);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Console.WriteLine(ex);
-        //    }
-        //    return "";
-        //}
-        //public static int GetIntValue(SqlDataReader reader, string columnName)
-        //{
-        //    try
-        //    {
-        //        if (reader[columnName] != DBNull.Value)
-        //            return Convert.ToInt32(reader[columnName]);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex);
-        //    }
-        //    return 0;
-        //}
+        public static int GetIntValue(MySqlDataReader reader, string columnName)
+        {
+            try
+            {
+                if (reader[columnName] != null && reader[columnName] != System.DBNull.Value)
+                    return reader.GetInt32(reader.GetOrdinal(columnName));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            return 0;
+        }
 
 
-        //public static object GetDateValue(SqlDataReader reader, string column)
+        public static bool GetBoolValue(MySqlDataReader reader, string columnName)
+        {
+            try
+            {
+                if (reader[columnName] != null && reader[columnName] != System.DBNull.Value)
+                    return (bool)reader[columnName];
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            return false;
+        }
+
+
+        //public static Object GetDateValue(SqlDataReader reader, string column)
         //{
 
         //    try
         //    {
-        //        if (reader[column] != DBNull.Value && (DateTime)reader[column] != DateTime.MinValue)
-        //            return (DateTime)reader[column];
+        //        return Convert.ToDateTime(reader[column]);
         //    }
         //    catch (Exception ex)
         //    {
@@ -165,33 +141,33 @@ namespace RecipeOrganizer.Infrastructure.Query
         //    return null;
         //}
 
-        //public static double GetDoubleValue(SqlDataReader reader, string columnName)
-        //{
-        //    try
-        //    {
-        //        if (reader[columnName] != DBNull.Value)
-        //            return Convert.ToDouble(reader[columnName]);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex);
-        //    }
-        //    return 0;
-        //}
+        public static double GetDoubleValue(MySqlDataReader reader, string columnName)
+        {
+            try
+            {
+                if (reader[columnName] != null && reader[columnName] != System.DBNull.Value)
+                    return ((double)reader[columnName]);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            return 0;
+        }
 
-        //public static decimal GetDecimalValue(SqlDataReader reader, string columnName)
-        //{
-        //    try
-        //    {
-        //        if (reader[columnName] != DBNull.Value)
-        //            return Convert.ToDecimal(reader[columnName]);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex);
-        //    }
-        //    return 0;
-        //}
+        public static decimal GetDecimalValue(MySqlDataReader reader, string columnName)
+        {
+            try
+            {
+                if (reader[columnName] != null && reader[columnName] != System.DBNull.Value)
+                    return ((decimal)reader[columnName]);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            return 0;
+        }
     }
 }
 
