@@ -13,7 +13,7 @@ namespace RecipeOrganizer.Domain.Entity
         public string UserId { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
+        public List<string> Role { get; set; } = new List<string>();
         public string Token { get; set; } = string.Empty;
     }
 }

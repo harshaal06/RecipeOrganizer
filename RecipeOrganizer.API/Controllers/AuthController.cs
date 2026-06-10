@@ -102,5 +102,22 @@ namespace RecipeOrganizer.API.Controllers
         {
             return Ok("Authorized User");
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [Route("AssignRole")]
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+        {
+            try
+            {
+                BaseResponse response = await _authService.AssignRoleAsync(request);
+
+                return StatusCode(response.ResponseCode, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
     }
 }

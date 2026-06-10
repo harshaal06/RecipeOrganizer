@@ -1,13 +1,14 @@
 ﻿using BCrypt.Net;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using MySqlConnector;
 using RecipeOrganizer.Domain.Entity;
 using RecipeOrganizer.Domain.Services;
 using RecipeOrganizer.Infrastructure.Query;
+using System.Data;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
 
 namespace RecipeOrganizer.Infrastructure.Services;
 
@@ -63,7 +64,7 @@ public class AuthService : IAuthService
                 return response;
             }
 
-            AssignUserRole(user.Id, "User", sqlHelper);
+            await AssignRoleAsync(new AssignRoleRequest { UserName = user.UserName, RoleName = "User" });
 
             response.UserId = user.Id;
             response.ResponseCode = 200;
@@ -93,31 +94,68 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
         };
     }
-    private void AssignUserRole(string userId, string roleName, SQLHelper sqlHelper)
+    public async Task<BaseResponse> AssignRoleAsync(AssignRoleRequest request)
     {
-        string roleId = string.Empty;
-        if (string.IsNullOrEmpty(userId))
-            return;
+        BaseResponse response = new BaseResponse();
+        SQLHelper sqlHelper = new SQLHelper();
         AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
 
-        string roleQuery = queryGenerator.GetRoleIdByNameQuery(roleName);
-
-        using (MySqlDataReader reader = sqlHelper.ExecuteQuery(roleQuery, _connectionString))
+        try
         {
-            if (reader.Read())
+            if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
             {
-                roleId = SQLHelper.GetStringValue(reader, "Id");
-            }
-        }
+                response.ResponseCode = 400;
+                response.ResponseMessage = "User Id and Role Name are required.";
 
-        if (!string.IsNullOrEmpty(roleId))
-        {
+                return response;
+            }
+
+            string roleId = string.Empty;
+            string userId = string.Empty;
+
+            string roleQuery = queryGenerator.GetUserIdAndRoleIdQuery(request.UserName, request.RoleName);
+
+            using (MySqlDataReader reader = sqlHelper.ExecuteQuery(roleQuery, _connectionString))
+            {
+                if (reader.Read())
+                {
+                    roleId = SQLHelper.GetStringValue(reader, "RoleId");
+                    userId = SQLHelper.GetStringValue(reader, "UserId");
+                }
+            }
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(roleId))
+            {
+                response.ResponseCode = 404;
+                response.ResponseMessage = "User or Role not found.";
+
+                return response;
+            }
+
             string roleAssignQuery = queryGenerator.AssignRoleQuery(userId, roleId);
 
-            sqlHelper.ExecuteNonQuery(roleAssignQuery, _connectionString);
-        }
-    }
+            int rowsAffected = sqlHelper.ExecuteNonQuery(roleAssignQuery, _connectionString);
 
+            if (rowsAffected > 0)
+            {
+                response.ResponseCode = 200;
+                response.ResponseMessage = "Role assigned successfully.";
+                response.RecordCount = rowsAffected;
+            }
+            else
+            {
+                response.ResponseCode = 500;
+                response.ResponseMessage = "Failed to assign role.";
+            }
+        }
+        catch (Exception ex)
+        {
+            response.ResponseCode = 500;
+            response.ResponseMessage = ex.Message;
+        }
+
+        return response;
+    }
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
         LoginResponse response = new();
@@ -130,8 +168,6 @@ public class AuthService : IAuthService
 
             User user = null;
 
-            string role = string.Empty;
-
             using (MySqlDataReader reader = sqlHelper.ExecuteQuery(query, _connectionString))
             {
                 if (reader.Read())
@@ -143,8 +179,6 @@ public class AuthService : IAuthService
                         Email = SQLHelper.GetStringValue(reader, "Email"),
                         PasswordHash = SQLHelper.GetStringValue(reader, "PasswordHash")
                     };
-
-                    role = SQLHelper.GetStringValue(reader, "Role");
                 }
             }
 
@@ -164,14 +198,16 @@ public class AuthService : IAuthService
                 return response;
             }
 
-            string token = GenerateToken(user, role);
+            List<string> roles = GetRolesByUserName(user.UserName);
+
+            string token = GenerateToken(user, roles);
 
             response.ResponseCode = 200;
             response.ResponseMessage = "Login Successful";
             response.UserId = user.Id;
             response.UserName = user.UserName;
             response.Email = user.Email;
-            response.Role = role;
+            response.Role = roles;
             response.Token = token;
 
             return response;
@@ -184,16 +220,44 @@ public class AuthService : IAuthService
             return response;
         }
     }
-    private string GenerateToken(User user, string role)
+    public List<string> GetRolesByUserName(string userName)
+    {
+        List<string> roles = new();
+        SQLHelper sqlHelper = new SQLHelper();
+        AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
+
+        try
+        {
+            string query = queryGenerator.GetRolesByUserNameQuery(userName);
+
+            using (MySqlDataReader reader = sqlHelper.ExecuteQuery(query, _connectionString))
+            {
+                while (reader.Read())
+                {
+                    roles.Add(SQLHelper.GetStringValue(reader, "RoleName"));
+                }
+            }
+        }
+        catch
+        {
+            throw;
+        }
+
+        return roles;
+    }
+    private string GenerateToken(User user, List<string> roles)
     {
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("userName", user.UserName),
-            new Claim("role", role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+        foreach (string role in roles)
+        {
+            claims.Add(new Claim("role", role));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
 

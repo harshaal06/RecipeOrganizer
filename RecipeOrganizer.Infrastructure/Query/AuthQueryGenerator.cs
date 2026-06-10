@@ -41,6 +41,25 @@ namespace RecipeOrganizer.Infrastructure.Query
 
             return query.ToString();
         }
+        public string GetUserIdAndRoleIdQuery(string userName, string roleName)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append("SELECT ");
+            query.Append("u.Id AS UserId, ");
+            query.Append("r.Id AS RoleId ");
+            query.Append("FROM Users u ");
+            query.Append("CROSS JOIN Roles r ");
+            query.AppendFormat(
+                "WHERE u.UserName = '{0}' " +
+                "AND r.Name = '{1}' " +
+                "AND u.IsActive = 1 " +
+                "AND r.IsActive = 1",
+                userName,
+                roleName);
+
+            return query.ToString();
+        }
 
         public string InsertUserQuery(User user)
         {
@@ -114,6 +133,21 @@ namespace RecipeOrganizer.Infrastructure.Query
             query.AppendFormat(
                 "WHERE u.IsActive = 1 and ( u.Email = '{0}' OR u.UserName = '{0}')",
                 userNameOrEmail);
+
+            return query.ToString();
+        }
+
+        public string GetRolesByUserNameQuery(string userName)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append("SELECT r.Name AS RoleName ");
+            query.Append("FROM Users u ");
+            query.Append("INNER JOIN UserRoles ur ON u.Id = ur.UserId ");
+            query.Append("INNER JOIN Roles r ON ur.RoleId = r.Id ");
+            query.AppendFormat("WHERE u.UserName = '{0}' ", userName);
+            query.Append("AND u.IsActive = 1 ");
+            query.Append("AND r.IsActive = 1");
 
             return query.ToString();
         }
