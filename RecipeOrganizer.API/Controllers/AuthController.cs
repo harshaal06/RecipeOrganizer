@@ -98,9 +98,15 @@ namespace RecipeOrganizer.API.Controllers
         [Authorize]
         [HttpGet]
         [Route("Profile")]
-        public IActionResult Profile()
+        public async Task<IActionResult> Profile()
         {
-            return Ok("Authorized User");
+            string userName = User.FindFirst("userName")?.Value ?? string.Empty;
+
+            UserProfileRequest request = new UserProfileRequest { UserNames = new List<string> { userName }};
+
+            UserProfileResponse response = await _authService.GetUserProfileAsync(request);
+
+            return StatusCode(response.ResponseCode, response);
         }
 
         [Authorize(Roles = "Admin")]

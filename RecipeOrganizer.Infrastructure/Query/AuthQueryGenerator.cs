@@ -151,5 +151,39 @@ namespace RecipeOrganizer.Infrastructure.Query
 
             return query.ToString();
         }
+
+        public string GetUserProfileQuery(UserProfileRequest request)
+        {
+            StringBuilder query = new();
+
+            string users = string.Join(",", request.UserNames.Select(x => $"'{x}'"));
+
+            query.Append("SELECT ");
+            query.Append("u.Id, ");
+            query.Append("u.FirstName, ");
+            query.Append("u.LastName, ");
+            query.Append("u.UserName, ");
+            query.Append("u.Email, ");
+            query.Append("GROUP_CONCAT(r.Name) AS Roles ");
+
+            query.Append("FROM Users u ");
+
+            query.Append("LEFT JOIN UserRoles ur ");
+            query.Append("ON u.Id = ur.UserId ");
+
+            query.Append("LEFT JOIN Roles r ");
+            query.Append("ON ur.RoleId = r.Id ");
+
+            query.AppendFormat("WHERE u.UserName IN ({0}) and u.IsActive = 1 ", users);
+
+            query.Append("GROUP BY ");
+            query.Append("u.Id, ");
+            query.Append("u.FirstName, ");
+            query.Append("u.LastName, ");
+            query.Append("u.UserName, ");
+            query.Append("u.Email");
+
+            return query.ToString();
+        }
     }
 }

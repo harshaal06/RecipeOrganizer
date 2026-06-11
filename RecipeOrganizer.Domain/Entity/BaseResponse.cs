@@ -26,6 +26,6 @@ namespace RecipeOrganizer.Domain.Entity
             /// <summary>
             /// Response record count.
             /// </summary>
-            public int RecordCount;
+            public int RecordCount { get; set; }
         }
 }

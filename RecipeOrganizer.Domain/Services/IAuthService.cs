@@ -12,5 +12,6 @@ namespace RecipeOrganizer.Domain.Services
         Task<RegisterResponse> RegisterAsync(RegisterRequest request);
         Task<LoginResponse> LoginAsync(LoginRequest request);
         Task<BaseResponse> AssignRoleAsync(AssignRoleRequest request);
+        Task<UserProfileResponse> GetUserProfileAsync(UserProfileRequest request);
     }
 }

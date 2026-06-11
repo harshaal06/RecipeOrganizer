@@ -9,6 +9,7 @@ using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using static RecipeOrganizer.Domain.Entity.UserProfileResponse;
 
 namespace RecipeOrganizer.Infrastructure.Services;
 
@@ -266,6 +267,53 @@ public class AuthService : IAuthService
         var token = new JwtSecurityToken(issuer: _configuration["Jwt:Issuer"], audience: _configuration["Jwt:Audience"], claims: claims, expires: DateTime.UtcNow.AddHours(8), signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+    public async Task<UserProfileResponse> GetUserProfileAsync(UserProfileRequest request)
+    {
+        UserProfileResponse response = new UserProfileResponse();
+        SQLHelper sqlHelper = new SQLHelper();
+        AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
+        try
+        {
+            string query = queryGenerator.GetUserProfileQuery(request);
+            using (MySqlDataReader reader = sqlHelper.ExecuteQuery(query, _connectionString))
+            {
+                while (reader.Read())
+                {
+                    UserProfile profile = new()
+                    {
+                        UserId = SQLHelper.GetStringValue(reader, "Id"),
+                        FirstName = SQLHelper.GetStringValue(reader, "FirstName"),
+                        LastName = SQLHelper.GetStringValue(reader, "LastName"),
+                        UserName = SQLHelper.GetStringValue(reader, "UserName"),
+                        Email = SQLHelper.GetStringValue(reader, "Email")
+                    };
+
+                    string roles = SQLHelper.GetStringValue(reader, "Roles");
+
+                    profile.Roles = string.IsNullOrEmpty(roles) ? new List<string>() : roles.Split(',').ToList();
+
+                    response.Users.Add(profile);
+                }
+            }
+            if (!response.Users.Any())
+            {
+                response.ResponseCode = 404;
+                response.ResponseMessage = "Users Not Found";
+                response.RecordCount = 0;
+            }
+            else
+            {
+                response.ResponseCode = 200;
+                response.ResponseMessage = "Success";
+                response.RecordCount = response.Users.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+        return response;
     }
 }
 
