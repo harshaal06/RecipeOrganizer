@@ -199,7 +199,7 @@ public class AuthService : IAuthService
                 return response;
             }
 
-            List<string> roles = GetRolesByUserName(user.UserName);
+            List<string> roles = (await GetUserRolesAsync(user.UserName)).Roles;
 
             string token = GenerateToken(user, roles);
 
@@ -221,9 +221,9 @@ public class AuthService : IAuthService
             return response;
         }
     }
-    public List<string> GetRolesByUserName(string userName)
+    public async Task<GetUserRolesResponse> GetUserRolesAsync(string userName)
     {
-        List<string> roles = new();
+        GetUserRolesResponse response = new GetUserRolesResponse();
         SQLHelper sqlHelper = new SQLHelper();
         AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
 
@@ -235,16 +235,26 @@ public class AuthService : IAuthService
             {
                 while (reader.Read())
                 {
-                    roles.Add(SQLHelper.GetStringValue(reader, "RoleName"));
+                    response.Roles.Add(SQLHelper.GetStringValue(reader, "RoleName"));
                 }
             }
+            if (!response.Roles.Any())
+            {
+                response.ResponseCode = 404;
+                response.ResponseMessage = "User or Roles not found";
+                return response;
+            }
+
+            response.UserName = userName;
+            response.ResponseCode = 200;
+            response.ResponseMessage = "Success";
+            response.RecordCount = response.Roles.Count;
         }
         catch
         {
             throw;
         }
-
-        return roles;
+        return response;
     }
     private string GenerateToken(User user, List<string> roles)
     {
@@ -271,6 +281,12 @@ public class AuthService : IAuthService
     public async Task<UserProfileResponse> GetUserProfileAsync(UserProfileRequest request)
     {
         UserProfileResponse response = new UserProfileResponse();
+        if (request == null || request.UserNames == null)
+        {
+            response.ResponseCode = 400;
+            response.ResponseMessage = "Invalid Request";
+            return response;
+        }
         SQLHelper sqlHelper = new SQLHelper();
         AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
         try

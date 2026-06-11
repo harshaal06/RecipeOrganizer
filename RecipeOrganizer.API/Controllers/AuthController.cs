@@ -125,5 +125,15 @@ namespace RecipeOrganizer.API.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        [Authorize]
+        [HttpGet]
+        [Route("user/{userName}/roles")]
+        public async Task<IActionResult> GetUserRoles(string userName)
+        {
+            GetUserRolesResponse response = await _authService.GetUserRolesAsync(userName);
+
+            return StatusCode(response.ResponseCode, response);
+        }
     }
 }

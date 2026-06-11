@@ -185,5 +185,6 @@ namespace RecipeOrganizer.Infrastructure.Query
 
             return query.ToString();
         }
+
     }
 }
