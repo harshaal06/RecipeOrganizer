@@ -67,7 +67,7 @@ public class AuthService : IAuthService
 
             await AssignRoleAsync(new AssignRoleRequest { UserName = user.UserName, RoleName = "User" });
 
-            response.UserId = user.Id;
+            response.UserId = user.UserId;
             response.ResponseCode = 200;
             response.ResponseMessage = "Registration Successful";
         }
@@ -87,7 +87,7 @@ public class AuthService : IAuthService
     {
         return new User
         {
-            Id = Guid.NewGuid().ToString(),
+            UserId = Guid.NewGuid().ToString(),
             FirstName = request.FirstName,
             LastName = request.LastName,
             UserName = request.UserName,
@@ -111,8 +111,8 @@ public class AuthService : IAuthService
                 return response;
             }
 
-            string roleId = string.Empty;
-            string userId = string.Empty;
+            int roleId = 0;
+            int userId = 0;
 
             string roleQuery = queryGenerator.GetUserIdAndRoleIdQuery(request.UserName, request.RoleName);
 
@@ -120,12 +120,12 @@ public class AuthService : IAuthService
             {
                 if (reader.Read())
                 {
-                    roleId = SQLHelper.GetStringValue(reader, "RoleId");
-                    userId = SQLHelper.GetStringValue(reader, "UserId");
+                    roleId = SQLHelper.GetIntValue(reader, "RoleId");
+                    userId = SQLHelper.GetIntValue(reader, "UserId");
                 }
             }
 
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(roleId))
+            if (userId <= 0 || roleId <= 0)
             {
                 response.ResponseCode = 404;
                 response.ResponseMessage = "User or Role not found.";
@@ -175,7 +175,8 @@ public class AuthService : IAuthService
                 {
                     user = new User
                     {
-                        Id = SQLHelper.GetStringValue(reader, "Id"),
+                        Id = SQLHelper.GetIntValue(reader, "Id"),
+                        UserId = SQLHelper.GetStringValue(reader, "EntityId"),
                         UserName = SQLHelper.GetStringValue(reader, "UserName"),
                         Email = SQLHelper.GetStringValue(reader, "Email"),
                         PasswordHash = SQLHelper.GetStringValue(reader, "PasswordHash")
@@ -205,7 +206,7 @@ public class AuthService : IAuthService
 
             response.ResponseCode = 200;
             response.ResponseMessage = "Login Successful";
-            response.UserId = user.Id;
+            response.UserId = user.UserId;
             response.UserName = user.UserName;
             response.Email = user.Email;
             response.Role = roles;
@@ -221,9 +222,9 @@ public class AuthService : IAuthService
             return response;
         }
     }
-    public async Task<GetUserRolesResponse> GetUserRolesAsync(string userName)
+    public async Task<GetRolesResponse> GetUserRolesAsync(string userName)
     {
-        GetUserRolesResponse response = new GetUserRolesResponse();
+        GetRolesResponse response = new GetRolesResponse();
         SQLHelper sqlHelper = new SQLHelper();
         AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
 
@@ -260,14 +261,15 @@ public class AuthService : IAuthService
     {
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, user.UserId),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("userName", user.UserName),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
         foreach (string role in roles)
         {
-            claims.Add(new Claim("role", role));
+            //claims.Add(new Claim("role", role));
+            claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -298,7 +300,8 @@ public class AuthService : IAuthService
                 {
                     UserProfile profile = new()
                     {
-                        UserId = SQLHelper.GetStringValue(reader, "Id"),
+                        Id = SQLHelper.GetIntValue(reader, "Id"),
+                        UserId = SQLHelper.GetStringValue(reader, "EntityId"),
                         FirstName = SQLHelper.GetStringValue(reader, "FirstName"),
                         LastName = SQLHelper.GetStringValue(reader, "LastName"),
                         UserName = SQLHelper.GetStringValue(reader, "UserName"),
@@ -327,8 +330,45 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.Message);
+            response.ResponseCode = 500;
+            response.ResponseMessage = "Internal Server Error";
         }
+        return response;
+    }
+
+    public async Task<GetRolesResponse> GetRolesAsync()
+    {
+        GetRolesResponse response = new();
+        SQLHelper sqlHelper = new SQLHelper();
+        AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
+        try
+        {
+            string query = queryGenerator.GetRolesQuery();
+
+            using MySqlDataReader reader = sqlHelper.ExecuteQuery(query, _connectionString);
+
+            while (reader.Read())
+            {
+                response.Roles.Add(SQLHelper.GetStringValue(reader, "Name"));
+            }
+
+            if (!response.Roles.Any())
+            {
+                response.ResponseCode = 404;
+                response.ResponseMessage = "No roles found.";
+                return response;
+            }
+
+            response.ResponseCode = 200;
+            response.ResponseMessage = "Success";
+            response.RecordCount = response.Roles.Count;
+        }
+        catch (Exception ex)
+        {
+            response.ResponseCode = 500;
+            response.ResponseMessage = ex.Message;
+        }
+
         return response;
     }
 }

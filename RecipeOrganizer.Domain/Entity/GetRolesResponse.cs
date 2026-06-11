@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace RecipeOrganizer.Domain.Entity
 {
-    public class GetUserRolesResponse : BaseResponse
+    public class GetRolesResponse : BaseResponse
     {
-        public string UserName { get; set; } = string.Empty;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string UserName { get; set; } = null;
         public List<string> Roles { get; set; } = new();
     }
 }

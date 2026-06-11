@@ -67,7 +67,7 @@ namespace RecipeOrganizer.Infrastructure.Query
 
             query.Append("INSERT INTO Users ");
             query.Append("(");
-            query.Append("Id,");
+            query.Append("EntityId,");
             query.Append("FirstName,");
             query.Append("LastName,");
             query.Append("UserName,");
@@ -80,7 +80,7 @@ namespace RecipeOrganizer.Infrastructure.Query
 
             query.Append(" VALUES(");
 
-            query.AppendFormat("'{0}',", user.Id);
+            query.AppendFormat("'{0}',", user.UserId);
             query.AppendFormat("'{0}',", user.FirstName);
             query.AppendFormat("'{0}',", user.LastName);
             query.AppendFormat("'{0}',", user.UserName);
@@ -96,13 +96,13 @@ namespace RecipeOrganizer.Infrastructure.Query
             return query.ToString();
         }
 
-        public string AssignRoleQuery(string userId, string roleId)
+        public string AssignRoleQuery(int userId, int roleId)
         {
             StringBuilder query = new StringBuilder();
 
             query.Append("INSERT INTO UserRoles ");
             query.Append("(UserId, RoleId) ");
-            query.AppendFormat("VALUES ('{0}','{1}')",
+            query.AppendFormat("VALUES ({0},{1})",
                 userId,
                 roleId);
 
@@ -114,7 +114,7 @@ namespace RecipeOrganizer.Infrastructure.Query
             StringBuilder query = new();
 
             query.Append("SELECT ");
-            query.Append("u.Id, ");
+            query.Append("u.Id, u.EntityId, ");
             query.Append("u.FirstName, ");
             query.Append("u.LastName, ");
             query.Append("u.UserName, ");
@@ -159,7 +159,7 @@ namespace RecipeOrganizer.Infrastructure.Query
             string users = string.Join(",", request.UserNames.Select(x => $"'{x}'"));
 
             query.Append("SELECT ");
-            query.Append("u.Id, ");
+            query.Append("u.Id, u.EntityId, ");
             query.Append("u.FirstName, ");
             query.Append("u.LastName, ");
             query.Append("u.UserName, ");
@@ -177,11 +177,23 @@ namespace RecipeOrganizer.Infrastructure.Query
             query.AppendFormat("WHERE u.UserName IN ({0}) and u.IsActive = 1 ", users);
 
             query.Append("GROUP BY ");
-            query.Append("u.Id, ");
+            query.Append("u.Id, u.EntityId ");
             query.Append("u.FirstName, ");
             query.Append("u.LastName, ");
             query.Append("u.UserName, ");
             query.Append("u.Email");
+
+            return query.ToString();
+        }
+
+        public string GetRolesQuery()
+        {
+            StringBuilder query = new();
+
+            query.Append("SELECT Name ");
+            query.Append("FROM Roles ");
+            query.Append("WHERE IsActive = 1 ");
+            query.Append("ORDER BY Name");
 
             return query.ToString();
         }

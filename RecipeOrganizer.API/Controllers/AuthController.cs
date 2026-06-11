@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RecipeOrganizer.Domain.Entity;
 using RecipeOrganizer.Domain.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace RecipeOrganizer.API.Controllers
 {
@@ -126,12 +127,30 @@ namespace RecipeOrganizer.API.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         [Route("user/{userName}/roles")]
         public async Task<IActionResult> GetUserRoles(string userName)
         {
-            GetUserRolesResponse response = await _authService.GetUserRolesAsync(userName);
+            if(userName == null)
+            {
+                return BadRequest(new
+                {
+                    Success = false
+                });
+            }
+
+            GetRolesResponse response = await _authService.GetUserRolesAsync(userName);
+
+            return StatusCode(response.ResponseCode, response);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        [Route("roles")]
+        public async Task<IActionResult> GetRoles()
+        {
+            GetRolesResponse response = await _authService.GetRolesAsync();
 
             return StatusCode(response.ResponseCode, response);
         }
