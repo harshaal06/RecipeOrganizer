@@ -154,6 +154,10 @@ public class AuthService : IAuthService
             response.ResponseCode = 500;
             response.ResponseMessage = ex.Message;
         }
+        finally
+        {
+            sqlHelper.CloseSqlConnection();
+        }
 
         return response;
     }
@@ -210,17 +214,18 @@ public class AuthService : IAuthService
             response.UserName = user.UserName;
             response.Email = user.Email;
             response.Role = roles;
-            response.Token = token;
-
-            return response;
+            response.Token = token;            
         }
         catch (Exception ex)
         {
             response.ResponseCode = 500;
             response.ResponseMessage = ex.Message;
-
-            return response;
         }
+        finally
+        {
+            sqlHelper.CloseSqlConnection();
+        }
+        return response;
     }
     public async Task<GetRolesResponse> GetUserRolesAsync(string userName)
     {
@@ -254,6 +259,10 @@ public class AuthService : IAuthService
         catch
         {
             throw;
+        }
+        finally
+        {
+            sqlHelper.CloseSqlConnection();
         }
         return response;
     }
@@ -333,6 +342,10 @@ public class AuthService : IAuthService
             response.ResponseCode = 500;
             response.ResponseMessage = "Internal Server Error";
         }
+        finally
+        {
+            sqlHelper.CloseSqlConnection();
+        }
         return response;
     }
 
@@ -368,7 +381,92 @@ public class AuthService : IAuthService
             response.ResponseCode = 500;
             response.ResponseMessage = ex.Message;
         }
+        finally
+        {
+            sqlHelper.CloseSqlConnection();
+        }
+        return response;
+    }
 
+    public async Task<BaseResponse> CreateRolesAsync(CreateRoleRequest request, string createdBy)
+    {
+        BaseResponse response = new();
+        if (request == null)
+        {
+            response.ResponseCode = 400;
+            response.ResponseMessage = "Invalid Role Request.";
+            return response;
+        }
+        SQLHelper sqlHelper = new SQLHelper();
+        AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
+        try
+        {
+            string query = queryGenerator.InsertRolesQuery(request.Roles, createdBy);
+
+            int rowsAffected = sqlHelper.ExecuteNonQuery(query, _connectionString);
+
+            if (rowsAffected > 0)
+            {
+                response.ResponseCode = 201;
+                response.ResponseMessage = "Roles created successfully.";
+                response.RecordCount = rowsAffected;
+            }
+            else
+            {
+                response.ResponseCode = 500;
+                response.ResponseMessage = "Failed to create role.";
+            }
+        }
+        catch (Exception ex)
+        {
+            response.ResponseCode = 500;
+            response.ResponseMessage = "Internal Server Error";
+        }
+        finally
+        {
+            sqlHelper.CloseSqlConnection();
+        }
+        return response;
+    }
+
+    public async Task<BaseResponse> RemoveRoleAsync(string roleName)
+    {
+        BaseResponse response = new();
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            response.ResponseCode = 400;
+            response.ResponseMessage = "Role Name is required.";
+
+            return response;
+        }
+
+        SQLHelper sqlHelper = new SQLHelper();
+        AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
+        try
+        {
+            string query = queryGenerator.RemoveRoleQuery(roleName);
+
+            int rowsAffected = sqlHelper.ExecuteNonQuery(query, _connectionString);
+
+            if (rowsAffected <= 0)
+            {
+                response.ResponseCode = 404;
+                response.ResponseMessage = "Role not found.";
+            }
+
+            response.ResponseCode = 200;
+            response.ResponseMessage = "Role removed successfully.";
+            response.RecordCount = rowsAffected;
+        }
+        catch (Exception ex)
+        {
+            response.ResponseCode = 500;
+            response.ResponseMessage = "Internal Server Error";
+        }
+        finally
+        {
+            sqlHelper.CloseSqlConnection();
+        }
         return response;
     }
 }

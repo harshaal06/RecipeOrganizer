@@ -198,5 +198,28 @@ namespace RecipeOrganizer.Infrastructure.Query
             return query.ToString();
         }
 
+        public string InsertRolesQuery(List<RoleRequest> roles, string createdBy)
+        {
+            StringBuilder query = new();
+
+            query.Append("INSERT INTO Roles ");
+            query.Append("(EntityId, Name, Description, CreatedBy, CreatedAt, IsActive) ");
+            query.Append("VALUES ");
+
+            query.Append(string.Join(",",
+                roles.Select(role => $"('{Guid.NewGuid()}','{role.Name}','{role.Description}','{createdBy}',NOW(),1)")
+            ));
+
+            return query.ToString();
+        }
+
+        public string RemoveRoleQuery(string roleName)
+        {
+            StringBuilder query = new();
+            query.Append("UPDATE Roles ");
+            query.Append("SET IsActive = 0 ");
+            query.AppendFormat("WHERE Name = '{0}'", roleName);
+            return query.ToString();
+        }
     }
 }

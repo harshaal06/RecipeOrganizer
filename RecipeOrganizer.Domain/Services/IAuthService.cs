@@ -15,5 +15,7 @@ namespace RecipeOrganizer.Domain.Services
         Task<UserProfileResponse> GetUserProfileAsync(UserProfileRequest request);
         Task<GetRolesResponse> GetUserRolesAsync(string userName);
         Task<GetRolesResponse> GetRolesAsync();
+        Task<BaseResponse> CreateRolesAsync(CreateRoleRequest request, string createdBy);
+        Task<BaseResponse> RemoveRoleAsync(string roleName);
     }
 }

@@ -154,5 +154,27 @@ namespace RecipeOrganizer.API.Controllers
 
             return StatusCode(response.ResponseCode, response);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [Route("roles")]
+        public async Task<IActionResult> CreateRoles([FromBody] CreateRoleRequest request)
+        {
+            string createdBy = User.FindFirst("userName")?.Value ?? string.Empty;
+
+            BaseResponse response = await _authService.CreateRolesAsync(request, createdBy);
+
+            return StatusCode(response.ResponseCode, response);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete]
+        [Route("remove-role/{roleName}")]
+        public async Task<IActionResult> RemoveRole(string roleName)
+        {
+            BaseResponse response = await _authService.RemoveRoleAsync(roleName);
+
+            return StatusCode( response.ResponseCode, response);
+        }
     }
 }
