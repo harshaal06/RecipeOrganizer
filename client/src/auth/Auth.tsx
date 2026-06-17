@@ -1,14 +1,73 @@
 
 import { IoMdArrowRoundBack } from "react-icons/io";
-import { useState } from "react";
+import { TbLoader2 } from "react-icons/tb";
+import { useEffect, useState } from "react";
 import banner from "../assets/banner_image.jpg"
 import BtnLoader from "../components/loader/BtnLoader";
+import { apiRequest } from "../services/Api";
 
 export default function Auth() {
-  const [activeForm, setActiveForm] = useState("login");
+
+  const [activeForm, setActiveForm] = useState<"login" | "register" | "forgot">("login");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+
+  const accessToken = async () => {
+    try {
+      const response = await apiRequest("/Auth/get_access_token","GET");
+      console.log(response);
+         setIsLoading(false);
+    } catch (error) {
+      console.error(error);
+         setIsLoading(false);
+    }
+  }
+
+  const loginUser = async () => {
+    try {
+      const param = {
+          username: "admin",
+          password: "123456",
+        }
+      const response = await apiRequest("/Auth/Login","POST",param);
+
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const registerUser = async () => {
+    try {
+      const param = {
+        firstName: "Harshal",
+        lastName: "Aglawe",
+        userName: "harshaal",
+        email: "harshalaglawe1@gmail.com",
+        password: "Harshal@06"
+      }
+      const response = await apiRequest("/Auth/Register","POST",param);
+
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(()=>{
+    setIsLoading(true);
+    accessToken();
+  },[])
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <>
+    {isLoading &&  <div className="h-screen w-screen relative overflow-hidden">
+      <TbLoader2
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 text-blue-600 animate-spin"
+      />
+    </div>
+    }
+    {!isLoading && (<div className="h-screen w-screen overflow-hidden">
       <div className="flex h-screen">
         <div className="hidden lg:block lg:w-[60%] relative">
           <img src={banner} alt="Background" className="w-full h-full object-cover" />
@@ -58,7 +117,7 @@ export default function Auth() {
                       </button>
                     </div>
 
-                    <button type="button" className="cursor-pointer w-full h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2" tabIndex={activeForm === "login" ? 0 : -1}>
+                    <button onClick={loginUser} type="button" className="cursor-pointer w-full h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2" tabIndex={activeForm === "login" ? 0 : -1}>
                       <BtnLoader/>
                       Login
                     </button>
@@ -76,10 +135,10 @@ export default function Auth() {
               {/* ----------------- REGISTER FORM -------------------- */}
               <div
                 className={`
-          absolute inset-0 transition-all duration-500 ease-in-out
-          flex flex-col items-center justify-start
-          ${activeForm === "register" ? "translate-x-0 opacity-100" : activeForm === "login" ? "translate-x-full opacity-0 pointer-events-none" : "-translate-x-full opacity-0 pointer-events-none"}
-        `}
+                  absolute inset-0 transition-all duration-500 ease-in-out
+                  flex flex-col items-center justify-start 2xl:justify-center
+                  ${activeForm === "register" ? "translate-x-0 opacity-100" : activeForm === "login" ? "translate-x-full opacity-0 pointer-events-none" : "-translate-x-full opacity-0 pointer-events-none"}
+                `}
                 aria-hidden={activeForm !== "register"}
               >
                 <div className="w-full px-4 overflow-y-auto">
@@ -121,7 +180,7 @@ export default function Auth() {
                       <input type="password" placeholder="Confirm password" tabIndex={activeForm === "register" ? 0 : -1} />
                     </div>
 
-                    <button type="button" className="cursor-pointer w-full h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2" tabIndex={activeForm === "login" ? 0 : -1}>
+                    <button onClick={registerUser} type="button" className="cursor-pointer w-full h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2" tabIndex={activeForm === "login" ? 0 : -1}>
                       <BtnLoader/>
                       Create Account
                     </button>
@@ -139,10 +198,10 @@ export default function Auth() {
               {/* ---------------- FORGOT PASSWORD FORM --------------- */}
               <div
                 className={`
-          absolute inset-0 transition-all duration-500 ease-in-out
-          flex flex-col items-center justify-center
-          ${activeForm === "forgot" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"}
-        `}
+                  absolute inset-0 transition-all duration-500 ease-in-out
+                  flex flex-col items-center justify-center
+                  ${activeForm === "forgot" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"}
+                `}
                 aria-hidden={activeForm !== "forgot"}
               >
                 <div className="w-full px-4">
@@ -174,6 +233,7 @@ export default function Auth() {
           <div className="absolute bottom-4 text-slate-400 text-center w-full left-0">Powered by Axis</div>
         </div>
       </div>
-    </div>
+    </div>)}
+    </>
   );
 }
