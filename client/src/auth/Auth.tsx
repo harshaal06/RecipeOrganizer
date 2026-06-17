@@ -23,7 +23,7 @@ export default function Auth() {
         </div>
 
         <div className="w-full h-full lg:w-[40%] bg-white px-5 sm:px-8 lg:px-10 py-8 relative overflow-hidden">
-          <div className="w-full h-full mx-auto">
+          <div className="max-w-xl h-full mx-auto">
             {/* Forms Container */}
             <div className="relative flex flex-col items-center justify-center h-full overflow-hidden">
               {/* ------------------- LOGIN FORM -------------------- */}
@@ -77,7 +77,7 @@ export default function Auth() {
               <div
                 className={`
           absolute inset-0 transition-all duration-500 ease-in-out
-          flex flex-col items-center justify-start lg:justify-center
+          flex flex-col items-center justify-start
           ${activeForm === "register" ? "translate-x-0 opacity-100" : activeForm === "login" ? "translate-x-full opacity-0 pointer-events-none" : "-translate-x-full opacity-0 pointer-events-none"}
         `}
                 aria-hidden={activeForm !== "register"}
