@@ -7,9 +7,7 @@ import { apiRequest } from "../services/Api";
 import "./Auth.css";
 
 export default function Auth() {
-  const [activeForm, setActiveForm] = useState<"login" | "register" | "forgot">(
-    "login",
-  );
+  const [activeForm, setActiveForm] = useState<"login" | "register" | "forgot">("login");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [btnLoading, setBtnLoading] = useState<boolean>(false);
 
