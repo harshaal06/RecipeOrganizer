@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import banner from "../assets/banner_image.jpg";
 import BtnLoader from "../components/loader/BtnLoader";
 import { apiRequest } from "../services/Api";
+import { useNavigate } from "react-router-dom";
+
 import "./Auth.css";
 
 export default function Auth() {
+  const navigate = useNavigate();
+
   const [activeForm, setActiveForm] = useState<"login" | "register" | "forgot">("login");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [btnLoading, setBtnLoading] = useState<boolean>(false);
@@ -68,10 +72,11 @@ export default function Auth() {
 
     try {
       const param = {
-        username: loginForm.usernameOrEmail,
+        usernameOrEmail: loginForm.usernameOrEmail,
         password: loginForm.password,
       };
       const response = await apiRequest("/Auth/Login", "POST", param);
+      navigate("/home", { replace: true });
       console.log(response);
       setBtnLoading(false);
     } catch (error) {
@@ -90,6 +95,11 @@ export default function Auth() {
         password: registerForm.password,
       };
       const response = await apiRequest("/Auth/Register", "POST", param);
+      if(response.responseCode == 200){
+        alert(response.responseMessage);
+      }else{
+        alert(response.responseMessage);
+      }
       console.log(response);
       setBtnLoading(false);
     } catch (error) {
@@ -426,4 +436,5 @@ export default function Auth() {
       )}
     </>
   );
+  
 }
