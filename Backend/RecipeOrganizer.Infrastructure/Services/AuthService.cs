@@ -65,8 +65,9 @@ public class AuthService : IAuthService
                 return response;
             }
 
+            Console.WriteLine("Hello bro");
             await AssignRoleAsync(new AssignRoleRequest { UserName = user.UserName, RoleName = "User" });
-
+             Console.WriteLine("Hello bro 3");
             response.UserId = user.UserId;
             response.ResponseCode = 200;
             response.ResponseMessage = "Registration Successful";
@@ -100,13 +101,17 @@ public class AuthService : IAuthService
         BaseResponse response = new BaseResponse();
         SQLHelper sqlHelper = new SQLHelper();
         AuthQueryGenerator queryGenerator = new AuthQueryGenerator();
+         Console.WriteLine("Hello bro 2");
 
         try
         {
+            Console.WriteLine("Hello bro 2.1");
             if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
             {
                 response.ResponseCode = 400;
                 response.ResponseMessage = "User Id and Role Name are required.";
+            Console.WriteLine("RoleId: {0}, UserId: {1}", request.UserName, request.RoleName);
+
 
                 return response;
             }
@@ -115,7 +120,8 @@ public class AuthService : IAuthService
             int userId = 0;
 
             string roleQuery = queryGenerator.GetUserIdAndRoleIdQuery(request.UserName, request.RoleName);
-
+            Console.WriteLine(roleQuery);
+Console.WriteLine("Hello bro 2.3");
             using (MySqlDataReader reader = sqlHelper.ExecuteQuery(roleQuery, _connectionString))
             {
                 if (reader.Read())
@@ -124,6 +130,8 @@ public class AuthService : IAuthService
                     userId = SQLHelper.GetIntValue(reader, "UserId");
                 }
             }
+
+          Console.WriteLine("RoleId: {0}, UserId: {1}", roleId, userId);
 
             if (userId <= 0 || roleId <= 0)
             {

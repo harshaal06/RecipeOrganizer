@@ -26,6 +26,11 @@ input:focus {
     border-color: #3b82f6;
 }
 
+button:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+}
+
 @media (min-width: 640px) {
     input {
         height: 48px;

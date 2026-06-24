@@ -42,21 +42,35 @@ namespace RecipeOrganizer.Infrastructure.Query
         {
             StringBuilder query = new StringBuilder();
 
+            query.Append("SELECT * FROM (");
             query.Append("SELECT ");
-            query.Append("u.Id AS UserId, ");
-            query.Append("r.Id AS RoleId ");
-            query.Append("FROM Users u ");
-            query.Append("CROSS JOIN Roles r ");
-            query.AppendFormat(
-                "WHERE u.UserName = '{0}' " +
-                "AND r.Name = '{1}' " +
-                "AND u.IsActive = 1 " +
-                "AND r.IsActive = 1",
-                userName,
-                roleName);
+            query.AppendFormat("(SELECT Id FROM Users WHERE UserName = '{0}' LIMIT 1) AS UserId, ", userName);
+            query.AppendFormat("(SELECT Id FROM Roles WHERE Name = '{0}' LIMIT 1) AS RoleId ", roleName);
+            query.Append(") t ");
+            query.Append("WHERE t.UserId IS NOT NULL ");
+            query.Append("AND t.RoleId IS NOT NULL");
 
             return query.ToString();
         }
+        // public string GetUserIdAndRoleIdQuery(string userName, string roleName)
+        // {
+        //     StringBuilder query = new StringBuilder();
+
+        //     query.Append("SELECT ");
+        //     query.Append("u.Id AS UserId, ");
+        //     query.Append("r.Id AS RoleId ");
+        //     query.Append("FROM Users u ");
+        //     query.Append("CROSS JOIN Roles r ");
+        //     query.AppendFormat(
+        //         "WHERE u.UserName = '{0}' " +
+        //         "AND r.Name = '{1}' " +
+        //         "AND u.IsActive = 1 " +
+        //         "AND r.IsActive = 1",
+        //         userName,
+        //         roleName);
+
+        //     return query.ToString();
+        // }
 
         public string InsertUserQuery(User user)
         {
@@ -144,7 +158,6 @@ namespace RecipeOrganizer.Infrastructure.Query
             query.Append("INNER JOIN Roles r ON ur.RoleId = r.Id ");
             query.AppendFormat("WHERE u.UserName = '{0}' ", userName);
             query.Append("AND u.IsActive = 1 ");
-            query.Append("AND r.IsActive = 1");
 
             return query.ToString();
         }
