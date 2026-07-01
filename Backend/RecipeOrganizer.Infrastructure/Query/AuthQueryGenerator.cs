@@ -241,29 +241,15 @@ namespace RecipeOrganizer.Infrastructure.Query
             return query.ToString();
         }
 
-        public string UpdateProfileQuery(string userId, UpdateProfileRequest request)
+        public string SaveEmailOTPQuery(int userId, string otp, DateTime expiry)
         {
             StringBuilder query = new();
 
             query.Append("UPDATE Users SET ");
-
-            query.AppendFormat( "FirstName = '{0}', ", request.FirstName);
-
-            query.AppendFormat(
-                "LastName = '{0}', ",
-                request.LastName);
-
-            query.AppendFormat(
-                "Email = '{0}', ",
-                request.Email);
-
-            query.AppendFormat(
-                "UserName = '{0}' ",
-                request.UserName);
-
-            query.AppendFormat(
-                "WHERE Id = '{0}'",
-                userId);
+            query.AppendFormat("EmailOTP = '{0}', ", otp);
+            query.AppendFormat("EmailOTPExpiry = '{0:yyyy-MM-dd HH:mm:ss}' ",expiry);
+            // query.Append("EmailVerified = 0 ");
+            query.AppendFormat("WHERE Id = '{0}'",userId);
 
             return query.ToString();
         }
