@@ -8,8 +8,10 @@ using RecipeOrganizer.Infrastructure.Query;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using static RecipeOrganizer.Domain.Entity.UserProfileResponse;
+using System.Security.Cryptography;
 
 namespace RecipeOrganizer.Infrastructure.Services;
 
@@ -17,11 +19,13 @@ public class AuthService : IAuthService
 {
     private readonly IConfiguration _configuration;
     private readonly string _connectionString;
+    private readonly IEmailService _emailService;
 
-    public AuthService( IConfiguration configuration)
+    public AuthService(IConfiguration configuration, IEmailService emailService)
     {
         _configuration = configuration;
         _connectionString = _configuration.GetConnectionString("RecipeOrganizerDB");
+        _emailService = emailService;
     }
 
     public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
@@ -66,6 +70,14 @@ public class AuthService : IAuthService
             }
 
             await AssignRoleAsync(new AssignRoleRequest { UserName = user.UserName, RoleName = "User" });
+
+            string otp = GenerateOTP();
+            DateTime expiry = DateTime.UtcNow.AddMinutes(10);
+
+            string updateQuery = queryGenerator.SaveEmailOTPQuery(user.Id, otp, expiry);
+            sqlHelper.ExecuteScalar(updateQuery, _connectionString);
+
+            await _emailService.SendOTPAsync(user.Email, user.UserName, otp);
 
             response.UserId = user.UserId;
             response.ResponseCode = 200;
@@ -535,37 +547,36 @@ public class AuthService : IAuthService
         return response;
     }
     private BaseResponse ValidateChangePasswordRequest(ChangePasswordRequest request)
+{
+    BaseResponse response = new();
+
+    if (request == null)
     {
-        BaseResponse response = new();
+        response.ResponseCode = 400;
+        response.ResponseMessage = "Request is required.";
+        return response;
+    }
 
-        if (request == null)
-        {
-            response.ResponseCode = 400;
-            response.ResponseMessage = "Request is required.";
-            return response;
-        }
-
-        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
-        {
-            response.ResponseCode = 400;
-            response.ResponseMessage = "All Fields are required.";
-
-            return response;
-        }
-
-        if (request.NewPassword != request.ConfirmPassword)
-        {
-            response.ResponseCode = 400;
-            response.ResponseMessage = "Passwords do not match.";
-
-            return response;
-        }
-
-        response.ResponseCode = 200;
+    if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+    {
+        response.ResponseCode = 400;
+        response.ResponseMessage = "All Fields are required.";
 
         return response;
     }
 
+    if (request.NewPassword != request.ConfirmPassword)
+    {
+        response.ResponseCode = 400;
+        response.ResponseMessage = "Passwords do not match.";
+
+        return response;
+    }
+
+    response.ResponseCode = 200;
+
+    return response;
+}
     //public async Task<BaseResponse> UpdateProfileAsync(string userId, UpdateProfileRequest request)
     //{
     //    BaseResponse response = new BaseResponse();
@@ -620,7 +631,11 @@ public class AuthService : IAuthService
     //    }
     //}
 
+    private string GenerateOTP()
+    {
+        int otp = RandomNumberGenerator.GetInt32(100000, 1000000);
 
+        return otp.ToString();
+    }
 }
-
-
+    
