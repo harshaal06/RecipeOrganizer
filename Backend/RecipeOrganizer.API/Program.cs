@@ -50,6 +50,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Authorization
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ReactPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 // Build Application
 var app = builder.Build();
 
@@ -61,7 +72,9 @@ if (app.Environment.IsDevelopment())
 }
 
 // Middleware Pipeline
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
+
+app.UseCors("ReactPolicy");
 
 app.UseAuthentication();
 
